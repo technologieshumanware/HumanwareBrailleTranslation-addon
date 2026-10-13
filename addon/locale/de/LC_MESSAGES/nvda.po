@@ -47,7 +47,7 @@ msgstr "Deaktivieren und Standard Braille Tabelle verwenden"
 #: ..\humanwarebrailletranslation\buildVars.py:22
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:38
 msgid "HumanWare Braille Translation"
-msgstr "HumanWare Brfaille Tabelle"
+msgstr "HumanWare Braille Tabelle"
 
 #. Translators: Long description to be shown for this add-on on add-on information from add-ons manager.
 #: ..\humanwarebrailletranslation\buildVars.py:25

@@ -28,15 +28,10 @@ else:
 with os.add_dll_directory(globalVars.appDir):
 	import louis
 
-
-DEFAULT_COMPUTER_BRAILLE_TABLE = "English US computer braille"
-"""The name of default computer braille table, 
-the one that we provide in this addon and guarantee to be there"""
-
-
 def translate(tableName, inbuf, typeform=None, cursorPos=None, mode=0):
 
-    log.info(f"computer braille translate + '{inbuf}', {cursorPos}") 
+    #disabled logs, reinstate only for investigations of particular issues 
+    #log.info(f"computer braille translate + '{inbuf}', {cursorPos}") 
 
 
     if cursorPos is not None:
@@ -53,17 +48,16 @@ def translate(tableName, inbuf, typeform=None, cursorPos=None, mode=0):
     mode |= louis.dotsIO 
     braille, brailleToRawPos, rawToBraillePos, brailleCursorPos = louisHelper.translate([tableName, "braille-patterns.cti"], inbuf, typeform=typeform, cursorPos=cursorPos, mode=mode)
     
-    log.info(f"C braille '{braille}, brailleToRawPos {brailleToRawPos},rawToBraillePos {rawToBraillePos}, brailleCursorPos {brailleCursorPos}")
-    #at times we get completely wild brailleCursorPos values (ex: 211680792 when we'd expect something 0< p <20)
-    #that seems to come deep from within liblouis
-    #we can limit that     
-    if brailleCursorPos is not None: 
-        if brailleCursorPos >= len(braille):
-            log.info(f"#######################    brailleCursorPos is way out!!!")
-            #brailleCursorPos = len(braille)
-    # or because we're here in the special case of computer braille
-    # we can use the fact that
-    brailleCursorPos = cursorPos        
+   
+    if cursorPos is None:
+        brailleCursorPos = None
+    elif cursorPos is not None and rawToBraillePos and cursorPos < len(rawToBraillePos):
+        brailleCursorPos = rawToBraillePos[cursorPos]
+    elif brailleCursorPos is None or (braille and brailleCursorPos >= len(braille)):
+        brailleCursorPos = len(braille) - 1 if braille else 0
+
+    #disabled logs, reinstate only for investigations of particular issues
+    #log.info(f"C braille '{braille}, brailleToRawPos {brailleToRawPos},rawToBraillePos {rawToBraillePos}, brailleCursorPos {brailleCursorPos}")
 
     return braille, brailleToRawPos, rawToBraillePos, brailleCursorPos
 
@@ -77,4 +71,3 @@ def backTranslate(tableName, brl: str, cursorPos=None, mode=0) -> str:
         cursorPos=cursorPos or 0,
         mode=mode,
         )[0]
-

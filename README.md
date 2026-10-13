@@ -39,12 +39,6 @@ A warning will be given on startup if the settings don't match.
  
 
 
-
-
-
-## HumanwareBrailleTranslation v1.0
-initial version
-
 ## License. 
 
 This hopefully falls under the NVDA plugin exemption where the plugin uses a non-GPL library to process some translations, a situation analog to a speech engine plugin using a proprietary driver.

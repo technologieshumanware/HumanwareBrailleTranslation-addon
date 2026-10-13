@@ -6,7 +6,9 @@ space \t 9 tab
 space \s 0 blank
 space \x00a0 a unbreakable space
 space \x001e 0 record separator
-sign \x000a 78 newline
+# Newline must be a space (whitespace), not a sign (visible braille cell).
+# Using "sign 78" caused \n to render as dots-7-8  on the display
+space \x000a 0 newline
 space \x000d 0 carriage return
 include loweredDigits6Dots.uti
 include latinLetterDef8Dots.uti
@@ -45,4 +47,7 @@ math / 34
 sign * 16
 
 include englishAlternatePunctuationDef8Dots.uti
- 
+
+# Include braille-patterns.cti here so that Unicode braille characters
+# (U+2800-U+28FF) are recognized and passed through unchanged.
+include braille-patterns.cti

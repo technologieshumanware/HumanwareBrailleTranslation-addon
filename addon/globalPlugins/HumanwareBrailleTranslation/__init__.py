@@ -6,7 +6,6 @@
 # entry point for HWTranslation
 import brailleTranslation
 from .HWTranslationProvider import HWTranslationProvider
-from .computerBraille import DEFAULT_COMPUTER_BRAILLE_TABLE
 from .constants import BRAILLE_TYPE_LITERARY, BRAILLE_TYPE_COMPUTER
 
 import api
@@ -16,7 +15,7 @@ import globalCommands
 import wx
 import config
 from config.featureFlagEnums import FontFormattingBrailleModeFlag
-
+from .HWTranslationProvider import _get_locale_defaults
 from scriptHandler import script
 
 import ui
@@ -65,18 +64,14 @@ def getLocalizedBrailleType(brailleTypeConstant: str) -> str:
     log.debugWarning(f"No localized label found for braille type '{brailleTypeConstant}', using default")
     return next(iter(TRANSLATOR_TYPE_MAP.keys()))
 
-instanceGP = None
-
 confspec = {
     "bypass": 'boolean(default="False")',
-    "translatorChoice": 'string(default="English UEB Duxbury grade 2")',
-    "G0TranslatorChoice": f'string(default="{DEFAULT_COMPUTER_BRAILLE_TABLE}")',
+    "translatorChoice": 'string(default="")',
+    "G0TranslatorChoice": 'string(default="")',
     "TranslatorTypeForEntry": f'string(default="{BRAILLE_TYPE_LITERARY}")',
     "TranslatorTypeForDisplay": f'string(default="{BRAILLE_TYPE_LITERARY}")'
 }
-
 config.conf.spec["HumanwareBrailleTranslation"] = confspec
-
 
 class AddonSettingsPanel(SettingsPanel):
 
@@ -117,21 +112,22 @@ class AddonSettingsPanel(SettingsPanel):
         #    _("French (unified) 8 dot computer braille"),
         #    _("Spanish 8 dot computer braille")
         #]
-        self._G0_translator_choices = []
+        self._G0_translator_files = [] 
+        self._G0_translator_choices = []       
         for table in brailleTables.listTables():
-            if (table.computerBraille == True):
+            if table.computerBraille:
+                self._G0_translator_files.append(table.fileName) 
                 self._G0_translator_choices.append(table.displayName) # TODO need to verify if these are localized to make sure we don't save localized value into the config file
 
         # Translators: This is the label for a combobox in the addon settings panel.
         self._G0_translator_choice_title = _("Computer Braille translator:")
-
         self._G0_translator_choice = braille_settings_gui_helper.addLabeledControl(self._G0_translator_choice_title, wx.Choice, choices=self._G0_translator_choices)
-        cur_choice = config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"]
+        cur_file = config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"]
         try:
-            index = self._G0_translator_choices.index(cur_choice)
+            index = self._G0_translator_files.index(cur_file)
             self._G0_translator_choice.SetSelection(index)
         except ValueError:
-            log.debugWarning(f"Could not find '{cur_choice}' in G0 translator choices")
+            log.debugWarning(f"Could not find '{cur_file}' in G0 translator choices")
 
         # Translators: Label for the preferred braille grade for entry.
         self.translator_entry_type_choice_title = _("Preferred Braille grade for entry")
@@ -156,7 +152,7 @@ class AddonSettingsPanel(SettingsPanel):
             self._translator_display_type_choice.SetSelection(index)
         except ValueError:
             log.debugWarning(f"Could not find '{currentType}' in translator display type choices, using default")
-            self._translator_display_type_choice.SetSelection(0)
+            self._translator_display_type_choice.SetSelection(0) 
 
 
 
@@ -167,11 +163,10 @@ class AddonSettingsPanel(SettingsPanel):
         config.conf["HumanwareBrailleTranslation"]["bypass"] = self.bypasscheckbox.IsChecked()
         #could we unregister and restart brailleTranslation init?
         config.conf["HumanwareBrailleTranslation"]["translatorChoice"] = self._translator_choices[self._translator_choice.GetSelection()]
-        config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"] = self._G0_translator_choices[self._G0_translator_choice.GetSelection()]
+        idx = self._G0_translator_choice.GetSelection()
+        config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"] = self._G0_translator_files[idx]        
         config.conf["HumanwareBrailleTranslation"]["TranslatorTypeForEntry"] = TRANSLATOR_TYPE_MAP[self._translator_types[self._translator_entry_type_choice.GetSelection()]]
         config.conf["HumanwareBrailleTranslation"]["TranslatorTypeForDisplay"] = TRANSLATOR_TYPE_MAP[self._translator_types[self._translator_display_type_choice.GetSelection()]]
-
-
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
@@ -203,11 +198,55 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         import braille
         braille.handler.handleGainFocus(api.getFocusObject(), shouldAutoTether=False)
 
+    def _set_default_translator_choices(self, force: bool):
+        conf = config.conf["HumanwareBrailleTranslation"]
+
+        need_defaults = force or conf["translatorChoice"] == "" or conf["G0TranslatorChoice"] == ""
+
+        if not need_defaults:
+            return
+
+        default_literary, default_computer = _get_locale_defaults()
+
+        if force:
+            conf["translatorChoice"] = default_literary
+            conf["G0TranslatorChoice"] = default_computer
+            return
+
+        if conf["translatorChoice"] == "" and default_literary:
+            conf["translatorChoice"] = default_literary
+            log.info(f"Auto-selected translator from INI: {default_literary}")
+
+        if conf["G0TranslatorChoice"] == "" and default_computer:
+            conf["G0TranslatorChoice"] = default_computer
+            log.info(f"Auto-selected computer braille table from INI: {default_computer}")
+
+    def _migrate_legacy_translator_type_values(self):
+        """Migrate G0TranslatorChoice from old display name format (pre-update-1)
+        to the file name format introduced in update-1.
+        Old value was e.g. "English (US) 8 dot computer braille" (display name).
+        New value is e.g. "en-us-comp8.ctb" (file name).
+        """
+        conf = config.conf["HumanwareBrailleTranslation"]
+        saved_value = conf["G0TranslatorChoice"]
+        if not saved_value:
+            return
+
+        # Build a display name -> file name map
+        display_to_file = {table.displayName: table.fileName for table in brailleTables.listTables() if table.computerBraille}
+
+        if saved_value in display_to_file:
+            migrated = display_to_file[saved_value]
+            conf["G0TranslatorChoice"] = migrated
+
     def __init__(self):
         log.debug("HWTranslation plugin init-")
         global instanceGP
         super().__init__()
         instanceGP = self
+
+        self._migrate_legacy_translator_type_values()
+        self._set_default_translator_choices(force=False)
 
         #if we only registerProvider here
         #we can check that the settings are compatible with the plugin use
@@ -234,19 +273,18 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         # Register to post config reset event so we can apply default
         # HW braille translation config after factory reset
         config.post_configReset.register(self.onPostConfigReset)
-
+        
 
     def onPostConfigReset(self, factoryDefaults=False):
         if factoryDefaults:
-            # Reset all values to their defaults from confspec
-            config.conf["HumanwareBrailleTranslation"]["bypass"] = False
-            config.conf["HumanwareBrailleTranslation"]["translatorChoice"] = "English UEB Duxbury grade 2"
-            config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"] = DEFAULT_COMPUTER_BRAILLE_TABLE
+            config.conf["HumanwareBrailleTranslation"]["bypass"] = False        
+            self._set_default_translator_choices(force=True)
             config.conf["HumanwareBrailleTranslation"]["TranslatorTypeForEntry"] = BRAILLE_TYPE_LITERARY
             config.conf["HumanwareBrailleTranslation"]["TranslatorTypeForDisplay"] = BRAILLE_TYPE_LITERARY
-
+            
     def onSettings(self, evt):
         gui.mainFrame.popupSettingsDialog(NVDASettingsDialog, AddonSettingsPanel)
+
 
     @script(
         # Translators: Describes a command.
@@ -264,8 +302,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def terminate(self):
         translationProvider.terminate()
         self.disable()
-        #NVDASettingsDialog.categoryClasses.remove(AddonSettingsPanel)
-
+        try:
+            NVDASettingsDialog.categoryClasses.remove(AddonSettingsPanel)
+        except ValueError:
+            # Panel was already removed or never added
+            pass
+        
     def enable(self):
         if self.isEnabled:
             return

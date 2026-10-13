@@ -14,7 +14,8 @@ import os
 import os.path
 import zipfile
 import sys
-import subprocess
+from pathlib import Path
+import errno
 
 # Add-on localization exchange facility and the template requires Python 3.10.
 # For best practice, use Python 3.11 or later to align with NVDA development.
@@ -95,6 +96,7 @@ vars.Add("versionNumber", "Version number of the form major.minor.patch", "0.0.0
 vars.Add(BoolVariable("dev", "Whether this is a daily development version", False))
 vars.Add("channel", "Update channel for this build", buildVars.addon_info["addon_updateChannel"])
 vars.Add("nuget", "Path to nuget.exe CLI", buildVars.addon_info["addon_nuget"])
+vars.Add(BoolVariable("humanwareSign", "Sign assembly and executable files", False))
 
 env = Environment(variables=vars, ENV=os.environ, tools=['gettexttool', mdTool])
 env.Append(**buildVars.addon_info)
@@ -166,6 +168,9 @@ def createAddonHelp(dir):
 def createAddonBundleFromPath(path, dest):
 	""" Creates a bundle from a directory that contains an addon manifest file."""	
 	installBrailleTranslationLib()
+	if env["humanwareSign"]:
+		signAssemblies()
+
 	basedir = os.path.abspath(path)
 	with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as z:
 		# FIXME: the include/exclude feature may or may not be useful. Also python files can be pre-compiled.
@@ -182,36 +187,17 @@ def installBrailleTranslationLib():
 	"""Invoke installLib.ps1 to get BrailleTranslationLib from package registry
 	   and bundle it with current addon
 	"""
-	try:
-		result = subprocess.run([
-			"powershell.exe", 
-			"-ExecutionPolicy", 
-			"RemoteSigned",
-			"-File", 
-			"installLib.ps1",
-			"-Library",
-			"BrailleTranslationLib",
-			"-Version", #Remove the version argument if we want to return to the latest version of the lib
-			"1.0.54",
-			"-NugetPath",
-			buildVars.addon_info["addon_nuget"]], 
-		capture_output=True, 
-		text=True, 
-		check=True,
-		cwd=os.getcwd())
+	nuget = buildVars.addon_info["addon_nuget"]
+	#Remove the version argument if we want to return to the latest version of the lib
+	res = env.Execute(
+		f'powershell -File installLib.ps1 '
+		f'-Library BrailleTranslationLib '
+		f'-Version 2.0.0.83 '
+		f'-NugetPath "{nuget}"'
+	)
 
-		# Print script output to console
-		if result.stdout:
-			print(result.stdout)
-		if result.stderr:
-			print(result.stderr)
-			
-	except subprocess.CalledProcessError as e:
-		print(f"PowerShell script failed with exit code {e.returncode}")
-		print(f"Error output: {e.stderr}")
-		print(f"Standard output: {e.stdout}")
-		raise
-
+	if res != 0:
+		raise RuntimeError("Error while installing BrailleTranslationLib")
 
 def generateManifest(source, dest):
 	# Prepare the root manifest section
@@ -219,7 +205,7 @@ def generateManifest(source, dest):
 	with codecs.open(source, "r", "utf-8") as f:
 		manifest_template = f.read()
 	manifest = manifest_template.format(**addon_info)
-	# Add additional manifest sections such as custom braile tables
+	# Add additional manifest sections such as custom braille tables
 	# Custom braille translation tables
 	if getattr(buildVars, "brailleTables", {}):
 		manifest_brailleTables = ["\n[brailleTables]"]
@@ -250,7 +236,7 @@ def generateTranslatedManifest(source, language, out):
 	with codecs.open(source, "r", "utf-8") as f:
 		manifest_template = f.read()
 	result = manifest_template.format(**vars)
-	# Add additional manifest sections such as custom braile tables
+	# Add additional manifest sections such as custom braille tables
 	# Custom braille translation tables
 	if getattr(buildVars, "brailleTables", {}):
 		result_brailleTables = ["\n[brailleTables]"]
@@ -276,6 +262,17 @@ def generateTranslatedManifest(source, language, out):
 def expandGlobs(files):
 	return [f for pattern in files for f in env.Glob(pattern)]
 
+def signAssemblies():
+	file_name = "Humanware-Addon-Sign.ps1"
+	rglob = list(Path('.').rglob(file_name))
+	if not rglob:
+		raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_name)
+
+	sign_script = str(rglob[0])
+	res = env.Execute(f'powershell -File {sign_script}')
+	if res != 0:
+		raise RuntimeError("Addon signing script exit with failure")
+	
 
 addon = env.NVDAAddon(addonFile, env.Dir('addon'))
 

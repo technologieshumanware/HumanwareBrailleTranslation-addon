@@ -1,6 +1,6 @@
 # UNTRANSLATED STRINGS FOR NVDA ADDON
 # Language: nl
-# Generated: 2026-04-21 11:33:27
+# Generated: 2026-03-24 11:46:25
 #
 # Please translate the msgstr lines and use import-translations.py
 # to merge them back into the main .po file.
@@ -14,19 +14,9 @@ msgstr ""
 "Language-Team: \n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.4.2\n"
-
-#. Translators: Label to inform user that HumanwareBrailleTranslation addon could not be loaded correctly
-#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:42
-msgid "HumanWare Braille translation Add-on could not be loaded correctly."
-msgstr "De HumanWare Braille-vertalingsadd-on kon niet correct worden geladen."
-
-#. Translators: dialog title when announcing an error for HumanwareBrailleTranslation addon
-#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:34
-msgid "HumanWare Braille translation error"
-msgstr "HumanWare Braille vertaalfout"
 
 #. Translators: This is the label for Computer braille in the addon settings panel.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:47
@@ -36,7 +26,7 @@ msgstr "Computerbraille"
 #. Translators: This is the label for a combobox in the addon settings panel.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:121
 msgid "Computer Braille translator:"
-msgstr "Computer-Braillevertaler:"
+msgstr "Computer-Brailletabel:"
 
 #. Translators: This is the label for a checkbox in the addon settings panel.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:83
@@ -57,22 +47,22 @@ msgstr "HumanWare Braille Translation library als add-on"
 #. Translators: This is the label for Literary braille in the addon settings panel.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:45
 msgid "Literary Braille"
-msgstr "Literaire braille"
+msgstr "Literair braille"
 
 #. Translators: This is the label for a combobox in the addon settings panel.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:96
 msgid "Literary Braille translator:"
-msgstr "Literaire Braille-vertaler:"
+msgstr "Literaire Brailletabel:"
 
 #. Translators: Label for the preferred braille grade for display.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:145
 msgid "Preferred Braille grade for display"
-msgstr "Voorkeursgrade braille voor weergave"
+msgstr "Voorkeursbrailleschrift voor uitvoer"
 
 #. Translators: Label for the preferred braille grade for entry.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:132
 msgid "Preferred Braille grade for entry"
-msgstr "Voorkeursgraad braille voor invoer"
+msgstr "Voorkeursbrailleschrift voor uitvoer"
 
 #. Translators: Warning message when starting and incompatible options are detected.
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:222
@@ -90,3 +80,13 @@ msgstr "Toont de %s-instellingen."
 #: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:177
 msgid "Toggles between Literary Braille and Computer Braille"
 msgstr "Schakelt tussen Literair Braille en Computerbraille"
+
+#. Translators: Label to inform user that HumanwareBrailleTranslation addon could not be loaded correctly
+#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:42
+msgid "HumanWare Braille translation Add-on could not be loaded correctly."
+msgstr "De HumanWare Braille-vertalingsadd-on kon niet correct worden geladen."
+
+#. Translators: dialog title when announcing an error for HumanwareBrailleTranslation addon
+#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:34
+msgid "HumanWare Braille translation error"
+msgstr "HumanWare Braille vertaalfout"

@@ -12,6 +12,8 @@ import sys
 import config
 import brailleTables
 import louisHelper
+import configparser
+import languageHandler
 
 from . import computerBraille
 from .constants import BRAILLE_TYPE_LITERARY, BRAILLE_TYPE_COMPUTER
@@ -31,6 +33,31 @@ else:
 
 initSuccess = True
 
+def _get_locale_defaults() -> tuple:
+    lang_base = languageHandler.getLanguage().split("_")[0]
+
+    addon_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ini_path = os.path.join(addon_root, "locale", lang_base, "defaultBrailleTable.ini")
+
+    if os.path.exists(ini_path):
+        try:
+            parser = configparser.ConfigParser()
+            parser.read(ini_path, encoding="utf-8")
+            return parser.get("Defaults", "literary_braille_table"), parser.get("Defaults", "computer_braille_table")
+        except Exception as e:
+            log.error(f"HWTranslation: Error reading file {ini_path}: {e}")
+
+    en_ini_path = os.path.join(addon_root, "locale", "en", "defaultBrailleTable.ini")
+    if os.path.exists(en_ini_path):
+        try:
+            parser = configparser.ConfigParser()
+            parser.read(en_ini_path, encoding="utf-8")
+            return parser.get("Defaults", "literary_braille_table"), parser.get("Defaults", "computer_braille_table")
+        except Exception as e:
+            log.error(f"HWTranslation: Error reading file {en_ini_path}: {e}")
+
+    return "", ""
+
 def showError(message: str):
     dialog = MessageDialog(
         parent=None,
@@ -41,12 +68,11 @@ def showError(message: str):
     )
     dialog.Show()
 
+
 def checkInitFailed():
     if not initSuccess:
         # Translators: Label to inform user that HumanwareBrailleTranslation addon could not be loaded correctly
         showError(_("HumanWare Braille translation Add-on could not be loaded correctly."))
-
-
 try:
     # Setup paths
     _base_path = os.path.dirname(os.path.realpath(__file__))
@@ -83,6 +109,18 @@ try:
 except Exception as e:
     log.error(f"Unable to load BrailleTranslationLib: {e}")
     initSuccess = False
+
+
+# BNW-3578 the positions BrailleTranslationLib reports are uint16, so an input long enough to
+# push them past 65535 comes back with unusable position maps, which is what makes the routing
+# cursors stop working after a certain point in large files. Long texts are therefore forward
+# translated one chunk of that many characters at a time, well under the uint16 ceiling.
+LITERARY_CHUNK_SIZE = 10000
+
+# Preferred cut points within a chunk, best first: a page break disturbs the translation context
+# least, then a line break, then a word break as a last resort before cutting a word in two.
+CHUNK_SEPARATORS = ("\f", "\n", " ")
+
 
 class HWTranslationProvider(brailleTranslation.BrailleTranslationProvider):
     
@@ -168,7 +206,7 @@ class HWTranslationProvider(brailleTranslation.BrailleTranslationProvider):
         
         except Exception as e:
             log.error(f"Translation error: {e}")
-            return ""
+            return [0], [0, 1], [0, 1], cursorPos if cursorPos is not None else 0
         
 
     def translateInGradeForEntry(self, txt: str, typeform=None, cursorPos=None, mode=0):
@@ -230,6 +268,100 @@ class HWTranslationProvider(brailleTranslation.BrailleTranslationProvider):
 
     # internal functions
 
+    def _chunkText(self, txt: str, chunkSize: int, respectWordBoundaries: bool = True) -> list[str]:
+        """Split the text into chunks of at most the specified size, optionally respecting word boundaries.
+        The chunks always partition the text exactly, ie "".join(chunks) == txt, so that the position
+        maps of the individual chunks can be offset and concatenated.
+        @param txt: The text to be chunked.
+        @param chunkSize: The maximum size of each chunk.
+        @param respectWordBoundaries: Whether to split on spaces when possible, defaults to True.
+        @return: A list of text chunks, empty if txt is empty.
+        """
+        if not respectWordBoundaries:
+            return [txt[i:i + chunkSize] for i in range(0, len(txt), chunkSize)]
+
+        chunks = []
+        index = 0
+        length = len(txt)
+
+        while index < length:
+            if index + chunkSize >= length:
+                chunks.append(txt[index:])
+                break
+
+            # last space within the window, so we don't cut a word in two
+            end = txt.rfind(" ", index, index + chunkSize)
+            if end == -1 or end <= index:
+                # a single word longer than the window, or a leading space: cut it anyway
+                end = index + chunkSize
+            else:
+                # keep the space itself in the chunk, otherwise it is lost from both the
+                # braille output and the position maps, and every offset past this boundary drifts
+                end += 1
+
+            chunks.append(txt[index:end])
+            index = end
+
+        return chunks
+
+    def _forwardTranslateChunked(self, translator, txt: str, cursorPos: int):
+        """Forward translate the text with the given literary translator, one chunk at a time.
+        BNW-3578 the translator cannot be trusted with arbitrarily long inputs, so the text is
+        translated in chunks and the results are offset and reassembled. For a text short enough
+        to fit in a single chunk this is equivalent to calling the translator directly.
+        @param translator: The literary braille translator to use.
+        @param txt: Text to translate.
+        @param cursorPos: Cursor position in text. A position sitting just past the end of the
+            text is mapped to the end of the last chunk.
+        @return: A tuple, list of braille cells, a brailleToText position array, a textToBraille
+            position array, and the matching cursorPos in the translation.
+        """
+        # an empty text still has to go through the translator, so that a blank line gets the
+        # same position maps it would have got from a single direct call
+        chunkedText: list[str] = self._chunkText(txt, LITERARY_CHUNK_SIZE) or [txt]
+
+        braille, posMap, rPosMap = [], [], []
+        textOffset = 0
+        outputPos = 0
+        cursorFound = False
+
+        for i, chunk in enumerate(chunkedText):
+            isLastChunk = i == len(chunkedText) - 1
+            # does the cursor belong to this chunk? one sitting just past the end of the text
+            # (caret at end of line) falls through to the last chunk
+            inChunk = not cursorFound and (cursorPos < textOffset + len(chunk) or isLastChunk)
+            chunkPos = cursorPos - textOffset if inChunk else 0
+
+            result: BrailleTranslationLib.Models.BrlTranslationResultEx = (
+                translator.ForwardWithFullPositions(chunk, chunkPos)
+            )
+
+            # Force immediate conversion from .NET to Python to avoid lazy evaluation freezes
+            cells = [int(ord(cell) & 255) for cell in str(result.Translated)]
+            chunkPosMap = [int(x) for x in result.PosMap]
+            chunkRPosMap = [int(x) for x in result.RPosMap]
+
+            brailleOffset = len(braille)
+
+            if inChunk:
+                outputPos = int(result.OutputPos) + brailleOffset
+                cursorFound = True
+
+            # A map may carry a trailing past the end entry. Only the last chunk gets to keep its
+            # own, otherwise the maps end up longer than the cells and characters they index and
+            # every lookup after a chunk boundary is off by one. No-op if the translator returns
+            # exactly one entry per cell / character.
+            if not isLastChunk:
+                del chunkPosMap[len(cells):]
+                del chunkRPosMap[len(chunk):]
+
+            braille += cells
+            posMap += [x + textOffset for x in chunkPosMap]
+            rPosMap += [x + brailleOffset for x in chunkRPosMap]
+            textOffset += len(chunk)
+
+        return braille, posMap, rPosMap, outputPos
+
     def _performLiteraryTranslation(self, txt: str, cursorPos: int, noPosOnEntry: bool):
         """Perform literary braille translation.
         @param txt: Text to translate.
@@ -240,34 +372,33 @@ class HWTranslationProvider(brailleTranslation.BrailleTranslationProvider):
         preferredTranslator = config.conf["HumanwareBrailleTranslation"]["translatorChoice"]
         translator = self.translatorManager.GetBrailleTranslator(preferredTranslator)
 
-        result: BrailleTranslationLib.Models.BrlTranslationResultEx = translator.ForwardWithFullPositions(txt, cursorPos)
-        
-        # Force immediate conversion from .NET to Python to avoid lazy evaluation freezes
-        braille = str(result.Translated)
-        braille = [int(ord(cell) & 255) for cell in braille]
-        posMap = [int(x) for x in result.PosMap]
-        rPosMap = [int(x) for x in result.RPosMap]
+        braille, posMap, rPosMap, outputPos = self._forwardTranslateChunked(translator, txt, cursorPos)
 
-        returnPos = None if noPosOnEntry else result.OutputPos
+        returnPos = None if noPosOnEntry else outputPos
         return braille, posMap, rPosMap, returnPos
 
     def _getComputerBrailleTable(self):
         """Returns the filename of the selected computer braille table."""
-        requestedTableName = config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"]
-        
-        # BNW-2204 We store in the settings the DisplayName.
+        requestedTable = config.conf["HumanwareBrailleTranslation"]["G0TranslatorChoice"]
+            
+        # BNW-2204 We USED TO store in the settings the DisplayName.
         # But the list can be localized, and therefore after switching languages, that name might not be found anymore
         # This is a bit of a clash with what we were doing so far, because our list of translator choices was presenting
         # each entry in its own native language (and charset). Which makes sense in terms of multilingual use, first boot wizard context, ...
         # table name has always been some sort of table unique ID.
+        # still the case for literary braille, but computer braille has to follow what's done in NVDA/LibLouis
+
+        #Anyway... now for Update 1 we store the filename of the computer braille table.
+        #therefore we need to now call getTable and not the getTableByDisplayName
         try:
-            computerbrailletable = brailleTables.getTableByDisplayName(requestedTableName)
+            computerBrailleTable = brailleTables.getTable(requestedTable)
         except LookupError:
             # We absolutely need a table!
-            computerbrailletable = brailleTables.getTableByDisplayName(computerBraille.DEFAULT_COMPUTER_BRAILLE_TABLE)
-            log.info(f"error getting requested table {requestedTableName}, fallback to {computerbrailletable.displayName}:{computerbrailletable.fileName}")
+            _, defaultComputerBrailleFileName = _get_locale_defaults()
+            computerBrailleTable = brailleTables.getTable(defaultComputerBrailleFileName)
+            log.info(f"error getting requested table {requestedTable}, fallback to {computerBrailleTable.displayName}:{computerBrailleTable.fileName}")
 
-        return computerbrailletable.fileName
+        return computerBrailleTable.fileName
 
     def _translateWithWordUnderCursorExpansion(self, txt: str, typeform=None, cursorPos=None, mode=0):
         """Translate with word under cursor expanded to computer braille.
@@ -309,35 +440,32 @@ class HWTranslationProvider(brailleTranslation.BrailleTranslationProvider):
         )
 
         # translate before
-        beforeResult: BrailleTranslationLib.Models.BrlTranslationResultEx = translator.ForwardWithFullPositions(before, 0)
+        # BNW-3578 related refactor here
+        brailleBefore, posMapBefore, rPosMapBefore, outputPos = self._forwardTranslateChunked(translator, before, 0)
+
 
         # translate after
-        afterResult: BrailleTranslationLib.Models.BrlTranslationResultEx = translator.ForwardWithFullPositions(after, 0)
+        #BNW-3578 related refactor here too
+        brailleAfter, posMapAfter, rPosMapAfter, outputPos = self._forwardTranslateChunked(translator, after, 0)
+        
 
         # reassemble
-        brailleBefore = [ord(cell) & 255 for cell in beforeResult.Translated]
-        brailleAfter = [ord(cell) & 255 for cell in afterResult.Translated]
         braille = brailleBefore + g0CurrentWord + brailleAfter
 
-        # there are some offsets involved in the translations posMaps
-        # Force immediate conversion from .NET to Python
-        posMapBefore = [int(x) for x in beforeResult.PosMap]
-        rPosMapBefore = [int(x) for x in beforeResult.RPosMap]
-        
         posMapCurrentWord = [x + spaceBefore for x in currentWordPos]
         # what's the corresponding position of "spaceBefore" in brailleBefore, which can be contracted?
         # it's the end of the braille
         spaceBeforePos = len(brailleBefore)
-        
+
         rPosMapCurrentWord = [x + spaceBeforePos for x in currentWordRPos]
-        
-        posMapAfter = [x + spaceAfter for x in [int(y) for y in afterResult.PosMap]]
+
+        adjustedPosMapAfter = [x + spaceAfter for x in posMapAfter]
         # need to find spaceAfter in the RPos...
         # it's spaceBeforePos + length of currentWord
         spaceAfterPos = spaceBeforePos + len(g0CurrentWord)
-        rPosMapAfter = [x + spaceAfterPos for x in [int(y) for y in afterResult.RPosMap]]
+        adjustedRPosMapAfter = [x + spaceAfterPos for x in rPosMapAfter]
 
-        posMap = posMapBefore + posMapCurrentWord + posMapAfter
-        rPosMap = rPosMapBefore + rPosMapCurrentWord + rPosMapAfter
+        posMap = posMapBefore + posMapCurrentWord + adjustedPosMapAfter
+        rPosMap = rPosMapBefore + rPosMapCurrentWord + adjustedRPosMapAfter
 
         return braille, posMap, rPosMap, g0Pos + spaceBeforePos
