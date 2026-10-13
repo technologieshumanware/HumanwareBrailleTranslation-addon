@@ -1,0 +1,91 @@
+# UNTRANSLATED STRINGS FOR NVDA ADDON
+# Language: de
+# Generated: 2026-04-21 11:33:21
+#
+# Please translate the msgstr lines and use import-translations.py
+# to merge them back into the main .po file.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+#. Translators: Label to inform user that HumanwareBrailleTranslation addon could not be loaded correctly
+#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:42
+msgid "HumanWare Braille translation Add-on could not be loaded correctly."
+msgstr "Das HumanWare Braille-Übersetzungs-Add-on konnte nicht korrekt geladen werden."
+
+#. Translators: dialog title when announcing an error for HumanwareBrailleTranslation addon
+#: humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\HWTranslationProvider.py:34
+msgid "HumanWare Braille translation error"
+msgstr "HumanWare Brailleübersetzer Fehler"
+
+#. Translators: This is the label for Computer braille in the addon settings panel.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:47
+msgid "Computer Braille"
+msgstr "Computer Braille"
+
+#. Translators: This is the label for a combobox in the addon settings panel.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:121
+msgid "Computer Braille translator:"
+msgstr "Computer Braille Tabelle:"
+
+#. Translators: This is the label for a checkbox in the addon settings panel.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:83
+msgid "Disable and use default Braille translation"
+msgstr "Deaktivieren und Standard Braille Tabelle verwenden"
+
+#. Translators: Summary for this add-on to be shown on installation and add-on information found in Add-ons Manager.
+#: ..\humanwarebrailletranslation\buildVars.py:22
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:38
+msgid "HumanWare Braille Translation"
+msgstr "HumanWare Brfaille Tabelle"
+
+#. Translators: Long description to be shown for this add-on on add-on information from add-ons manager.
+#: ..\humanwarebrailletranslation\buildVars.py:25
+msgid "HumanWare Braille Translation library as an add-on"
+msgstr "HumanWare Brailletabellenbibliothek als Add-on"
+
+#. Translators: This is the label for Literary braille in the addon settings panel.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:45
+msgid "Literary Braille"
+msgstr "Literaturbraille"
+
+#. Translators: This is the label for a combobox in the addon settings panel.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:96
+msgid "Literary Braille translator:"
+msgstr "Literaturbraille Tabelle:"
+
+#. Translators: Label for the preferred braille grade for display.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:145
+msgid "Preferred Braille grade for display"
+msgstr "Gewünschter Braillegrad für die Anzeige"
+
+#. Translators: Label for the preferred braille grade for entry.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:132
+msgid "Preferred Braille grade for entry"
+msgstr "Gewünschter Braillegrad für die Eingabe"
+
+#. Translators: Warning message when starting and incompatible options are detected.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:222
+msgid "Rendering of the typeforms in Braille translation is not supported"
+msgstr "Die Anzeige der Sonderzeichen wird bei der Brailleübersetzung nicht unterstützt."
+
+#. Translators: Describes a command.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:248
+#, python-format
+msgid "Shows the %s settings."
+msgstr "Zeigt die %s Einstellungen an."
+
+#. Translators: Description for the toggle braille grade command.
+#: ..\humanwarebrailletranslation\addon\globalPlugins\HumanwareBrailleTranslation\__init__.py:177
+msgid "Toggles between Literary Braille and Computer Braille"
+msgstr "Zwischen Literaturbraille und Computerbraille wechseln"

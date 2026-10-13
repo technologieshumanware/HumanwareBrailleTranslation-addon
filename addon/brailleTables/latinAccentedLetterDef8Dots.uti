@@ -1,0 +1,63 @@
+# liblouis: sub table for Accented Latin letter definition, 8 dots.
+#
+#  Copyright (C) 2012-2015, Alex Bec <alex.bec@humanware.com>
+#  All rights reserved
+#
+#  This file is free software; you can redistribute it and/or modify it
+#  under the terms of the Lesser or Library GNU General Public License
+#  as published by the
+#  Free Software Foundation; version 2.1
+#
+#  This file is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Library GNU General Public License for more details.
+#
+#  You should have received a copy of the Library GNU General Public
+#  License along with this program; see the file COPYING.  If not, write
+#  to
+#  the Free Software Foundation, 51 Franklin Street, Fifth Floor,
+#  Boston, MA 02110-1301, USA.
+#
+# Common accented latin letters with dot 7 as capital indicator, and dot 8 usually as accented indicator .
+# Follows what JAWS's US_Unicode.jbt is doing
+# Usually included to form a 8 dots table.
+
+ 
+
+uppercase Ç 123467  c cédille
+uppercase É 238		e accent aigu
+uppercase À 23678		a accent grave
+uppercase È 3578		e accent grave
+uppercase Ù 35678		u accent grave
+uppercase Â 167	    	a accent circonflexe
+uppercase Ê 1267		e accent circonflexe
+uppercase Î 1467		i accent circonflexe
+uppercase Ô 14567		o accent circonflexe
+uppercase Û 1567		u accent circonflexe
+uppercase Ë 2358		e tréma
+uppercase Ï 23568		i tréma
+uppercase Ü 2368		u tréma
+uppercase \x008C 237		oe liés
+uppercase \x0152 237		oe liés
+
+uppercase \x00D1 134578     n tilde
+
+lowercase ç 1234678  c cédille
+lowercase é 1268		e accent aigu
+lowercase à 123568		a accent grave
+lowercase è 23468		e accent grave
+lowercase ù 234568		u accent grave
+lowercase â 1678		a accent circonflexe
+lowercase ê 12678		e accent circonflexe
+lowercase î 14678		i accent circonflexe
+lowercase ô 145678		o accent circonflexe
+lowercase û 15678		u accent circonflexe
+lowercase ë 12468		e tréma
+lowercase ï 124568		i tréma
+lowercase ü 12568		u tréma
+lowercase \x009C 467		oe liés
+lowercase \x0153 467		oe liés
+
+lowercase \x00F1 1245678     n tilde
+

@@ -1,0 +1,75 @@
+# liblouis: sub table for fancy punctuation definition, 8 dots.
+#
+#  Copyright (C) 2012-2015, Alex Bec <alex.bec@humanware.com>
+#  All rights reserved
+#
+#  This file is free software; you can redistribute it and/or modify it
+#  under the terms of the Lesser or Library GNU General Public License
+#  as published by the
+#  Free Software Foundation; version 2.1
+#
+#  This file is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Library GNU General Public License for more details.
+#
+#  You should have received a copy of the Library GNU General Public
+#  License along with this program; see the file COPYING.  If not, write
+#  to
+#  the Free Software Foundation, 51 Franklin Street, Fifth Floor,
+#  Boston, MA 02110-1301, USA.
+#
+#  The aim of this file, included (so far) in US English 8 dots Computer Braille Table
+#  is to facilitate reading of rich text, which commonly embeds variants of 
+#  strict ansi punctuation symbols. Things like smart quotes, dashes or hyphens will 
+#  be mapped to their canonical equivalents, instead of being left unmapped and rendered as their 
+#  hex number signs, which makes the reading tedious  
+
+# ----------------------------------------------------------------------------------------------
+#   Common Punctuation variants
+# ----------------------------------------------------------------------------------------------
+
+#Variations on the hyphens
+punctuation \x2010        36                  ‐                   HYPHEN
+punctuation \x2011        36                  ‑                                             NON-BREAKING HYPHEN
+punctuation \x2012        36                  ‒                   FIGURE DASH
+punctuation \x2013        36                  –                   EN DASH
+punctuation \x2043        36                  ⁃                   HYPHEN BULLET
+punctuation \x2212        36                  −                   MINUS SIGN
+
+#Variations on the apostrophe
+punctuation \x2018        3                   ‘                   LEFT SINGLE QUOTATION MARK
+punctuation \x2019        3                   ’                   RIGHT SINGLE QUOTATION MARK
+punctuation \x201A        3                   ‚                   SINGLE LOW-9 QUOTATION MARK
+punctuation \x201B        3                   ‛                   SINGLE HIGH-REVERSED-9 QUOTATION MARK
+#Variations on the double quote
+punctuation \x201C        5                   “                   LEFT DOUBLE QUOTATION MARK
+punctuation \x201D        5                   ”                   RIGHT DOUBLE QUOTATION MARK
+punctuation \x201E        5                   „                   DOUBLE LOW-9 QUOTATION MARK
+punctuation \x201F        5                   ‟                   DOUBLE HIGH-REVERSED-9 QUOTATION MARK
+punctuation \x00AB        5		              «                   LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+punctuation \x00BB        5                   »                   RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+
+#Variations on the colon
+punctuation \xEE01       156             					Used in Android Time at the lockscreen
+
+
+#Variations on the asterisk
+sign \x00D7		  16				  ×                   MULTIPLICATION SIGN
+sign \x204E		  16				  *                   LOW ASTERISK
+sign \x2731		  16				    ✱                                          HEAVY ASTERISK
+sign \x2217		  16				  *                   ASTERISK OPERATOR
+sign \x2022		  16				  •                   BULLET
+sign \x00B7		  16				  ·                   MIDDLE DOT
+
+
+
+
+#other math symbol overrides
+sign \x00F7		  34				  ÷                   DIVISION SIGN
+sign \x2215		  34				  ∕                   DIVISION SLASH
+
+#ellipsis
+punctuation \x2026    46-46-46			  …               HORIZONTAL ELLIPSIS
+
+

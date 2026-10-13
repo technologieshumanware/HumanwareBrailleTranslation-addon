@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: SCons",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${env:LOCALAPPDATA}\\Programs\\Python\\Python311-32\\Lib\\site-packages\\SCons\\__main__.py",
+            "args": [],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}
