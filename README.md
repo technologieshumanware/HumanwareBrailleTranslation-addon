@@ -41,8 +41,8 @@ A warning will be given on startup if the settings don't match.
 
 ## License. 
 
-This hopefully falls under the NVDA plugin exemption where the plugin uses a non-GPL library to process some translations, a situation analog to a speech engine plugin using a proprietary driver.
+This project is licensed under the GPL-V2 licence, and falls under the NVDA plugin exemption where the plugin uses a non-GPL library to process some translations.
 
 
 ## Contact and developer information
-Technologies HumanWare <ca.info@humanware.com>
+Technologies HumanWare <github@humanware.com>
